@@ -21,6 +21,7 @@ class Graphics(object):
         self.camera = Vector3()
         self.look_dir = Vector3()
         self.yaw = 0
+        self.turning = True
 
         self.mesh = Mesh()
         self.theta = 0
@@ -55,7 +56,7 @@ class Graphics(object):
             self.camera = Vector3.sub(self.camera, forward_vec)
 
         # l/r mouse movement
-        if self.controller.delta_x > 2:
+        if self.controller.delta_x > 2 and self.turning:
             self.yaw += self.controller.delta_x * self.controller.delta_time * 0.1
             self.yaw %= 2 * pi
 
@@ -84,9 +85,9 @@ class Graphics(object):
         triangles_to_raster = []
         
         # draw all triangles onto screen
-        tri_transformed = Triangle()
         for triangle in self.mesh.triangles:
             tri_projected = Triangle()
+            tri_transformed = Triangle()
             tri_viewed = Triangle()
             tri_transformed[0] = Vector3.vmatmul(world_matrix, triangle[0])
             tri_transformed[1] = Vector3.vmatmul(world_matrix, triangle[1])
@@ -119,13 +120,14 @@ class Graphics(object):
                 tri_viewed[0] = Vector3.vmatmul(view_matrix, tri_transformed[0])
                 tri_viewed[1] = Vector3.vmatmul(view_matrix, tri_transformed[1])
                 tri_viewed[2] = Vector3.vmatmul(view_matrix, tri_transformed[2])
+                tri_viewed.shade = tri_transformed.shade
 
                 clipped_triangles = 0
                 clipped = [Triangle(), Triangle()]
                 clipped_triangles = Triangle.clip_against_plane(Vector3(0, 0, .1), Vector3(0, 0, 1), tri_viewed, clipped[0], clipped[1])
                 
                 for n in range(clipped_triangles):
-
+                    
                     # project triangles from 3D to 2D
                     tri_projected[0] = Vector3.vmatmul(self.proj_matrix, clipped[n][0])
                     tri_projected[1] = Vector3.vmatmul(self.proj_matrix, clipped[n][1])
@@ -136,7 +138,7 @@ class Graphics(object):
                     tri_projected[1] = Vector3.div(tri_projected[1], tri_projected[1].w)
                     tri_projected[2] = Vector3.div(tri_projected[2], tri_projected[2].w)
 
-                    # move across screen
+                    # offset vertices into visible normalized space
                     offset_view = Vector3(1, 1, 0)
                     tri_projected[0] = Vector3.add(tri_projected[0], offset_view)
                     tri_projected[1] = Vector3.add(tri_projected[1], offset_view)
@@ -152,27 +154,16 @@ class Graphics(object):
                     tri_projected[2].y *= h_scale
 
                     # store triangle for sorting, draw tris back to front
-                    triangles_to_raster.append(copy.copy(tri_projected))
+                    triangles_to_raster.append(copy.deepcopy(tri_projected))
 
         # sort triangles from back to front (sort by avg of z values of tri)
         triangles_to_raster.sort(key=lambda t: (t[0].z + t[1].z + t[2].z) / 3.0, reverse=True)
-
-        '''# rasterize triangles
-        for tri_projected in triangles_to_raster:
-
-            coords = [tri_projected[0].x, tri_projected[0].y,
-                    tri_projected[1].x, tri_projected[1].y,
-                    tri_projected[2].x, tri_projected[2].y]
-
-            # faces
-            self.interface.fill_triangle(*coords, tri_projected.shade)
-            # wireframe
-            self.interface.draw_triangle(*coords, Color.black)'''
         
         for tri_to_raster in triangles_to_raster:
             # clip triangles against screen edges
             clipped = [Triangle(), Triangle()]
             triangles = deque([])
+            # add initial triangle
             triangles.append(tri_to_raster)
             new_triangles = 1
 
@@ -182,21 +173,26 @@ class Graphics(object):
                     test = triangles.popleft()
                     new_triangles -= 1
 
+                    # top screen clip
                     if p == 0:
                         tris_to_add = Triangle.clip_against_plane(Vector3(0, 0, 0), Vector3(0, 1, 0), test, clipped[0], clipped[1])
+                    # bottom screen clip
                     elif p == 1:
                         tris_to_add = Triangle.clip_against_plane(Vector3(0, self.interface.resolution[1] - 1, 0), Vector3(0, -1, 0), test, clipped[0], clipped[1])
+                    # left screen clip
                     elif p == 2:
                         tris_to_add = Triangle.clip_against_plane(Vector3(0, 0, 0), Vector3(1, 0, 0), test, clipped[0], clipped[1])
+                    # right screen clip
                     elif p == 3:
                         tris_to_add = Triangle.clip_against_plane(Vector3(self.interface.resolution[0] - 1, 0, 0), Vector3(-1, 0, 0), test, clipped[0], clipped[1])
                     
                     # add the new triangles to the back of the queue
                     for w in range(tris_to_add):
-                        triangles.append(clipped[w])
+                        triangles.append(copy.deepcopy(clipped[w]))
                 new_triangles = len(triangles)
 
+            # draw transformed, viewed, clipped, projected, sorted triangles
             for t in triangles:
                 coords = [t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y]
                 self.interface.fill_triangle(*coords, t.shade)
-                self.interface.draw_triangle(*coords, Color.black)
+                #self.interface.draw_triangle(*coords, Color.black)

@@ -1,4 +1,4 @@
-import os.path, numpy as np
+import os.path, numpy as np, copy
 from math import pi
 
 from pyngine import Color
@@ -66,7 +66,7 @@ class Vector3(object):
         plane_d = -1 * Vector3.dot(plane_n, plane_p)
         ad = Vector3.dot(line_start, plane_n)
         bd = Vector3.dot(line_end, plane_n)
-        t = (-1 * plane_d - ad) / (bd - ad)
+        t = (-1. * plane_d - ad) / (bd - ad)
         line_start_to_end = Vector3.sub(line_end, line_start)
         line_to_intersect = Vector3.mul(line_start_to_end, t)
         return Vector3.add(line_start, line_to_intersect)
@@ -263,8 +263,8 @@ class Triangle(object):
         # triangle should be clipped to smaller triangle, two pts outside
         if inside_point_count == 1 and outside_point_count == 2:
             # copy appearance to new triangle
-            #out_tri1.shade = in_tri.shade
-            out_tri1.shade = Color.blue
+            out_tri1.shade = in_tri.shade
+            #out_tri1.shade = Color.blue
 
             # inside pt is valid
             out_tri1[0] = inside_points[0]
@@ -278,20 +278,20 @@ class Triangle(object):
         # triangle should be clipped into quad, 1 pt outside
         if inside_point_count == 2 and outside_point_count == 1:
             # copy appearance to new triangles
-            #out_tri1.shade = in_tri.shade
-            #out_tri2.shade = in_tri.shade
-            out_tri1.shade = Color.green
-            out_tri2.shade = Color.red
+            out_tri1.shade = in_tri.shade
+            out_tri2.shade = in_tri.shade
+            #out_tri1.shade = Color.green
+            #out_tri2.shade = Color.red
 
             # first triangle made of two inside pts and a new point at intersection
             out_tri1[0] = inside_points[0]
             out_tri1[1] = inside_points[1]
             out_tri1[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
-
+            
             # second triangle made of one inside pt, previously created pt, and at intersection
             out_tri2[0] = inside_points[1]
             out_tri2[1] = out_tri1[2]
-            out_tri2[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])
+            out_tri2[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])            
 
             return 2
 

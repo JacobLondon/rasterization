@@ -48,6 +48,7 @@ class GraphicsController(Controller):
         self.center_mouse = not self.center_mouse
         self.set_mouse_visible(not self.mouse_visible)
         self.key_presses[pygame.K_RETURN] = False
+        self.graphics.turning = not self.graphics.turning
 
     # stop the program
     def escape_keydown(self):
