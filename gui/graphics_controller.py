@@ -1,6 +1,6 @@
 import pygame
 
-from pyngine import Controller, Label, Relative, Anchor
+from pyngine import Controller, Label, Grid, Anchor
 from engine3d import Graphics1, Graphics2, Graphics3
 
 class GraphicsController(Controller):
@@ -11,15 +11,19 @@ class GraphicsController(Controller):
         self.center_mouse = True
 
     def initialize_components(self):
-        self.layout = Relative(self.background_panel)
+        self.layout = Grid(self.background_panel, 30, 30)
         self.fps_label = Label(self, str(self.fps))
+        self.fps_label.loc = self.layout.get_pixel(0, 0)
         self.fps_label.background = None
 
         # position of camera
         self.pos_label = Label(self, '')
-        self.pos_label.loc = self.layout.northeast
-        self.pos_label.anchor = Anchor.northeast
+        self.pos_label.loc = self.layout.get_pixel(0, 1)
         self.pos_label.background = None
+
+        self.yaw_label = Label(self, '')
+        self.yaw_label.loc = self.layout.get_pixel(0, 2)
+        self.yaw_label.background = None
 
     def setup(self):
         #self.graphics = Graphics1(self.interface)
@@ -32,6 +36,9 @@ class GraphicsController(Controller):
 
         self.pos_label.text = 'Position: ' + str(self.graphics.camera)
         self.pos_label.load()
+
+        self.yaw_label.text = 'Yaw: ' + str(self.graphics.yaw)
+        self.yaw_label.load()
 
     def draw_midground(self):
         self.graphics.update()

@@ -61,6 +61,7 @@ class Vector3(object):
 
     @staticmethod
     def intersect_plane(plane_p, plane_n, line_start, line_end):
+        # detecting a vector intersecting a plane
         plane_n = Vector3.normalize(plane_n)
         plane_d = -1 * Vector3.dot(plane_n, plane_p)
         ad = Vector3.dot(line_start, plane_n)
@@ -193,11 +194,106 @@ class Triangle(object):
 
         self.shade = Color.white
 
+    def __str__(self):
+        return str(self.p[0]) + str(self.p[1]) + str(self.p[2])
+
     def __getitem__(self, arg):
         return self.p[arg]
 
     def __setitem__(self, idx, value):
         self.p[idx] = value
+
+    # returns the number of triangles which will be needed
+    @staticmethod
+    def clip_against_plane(plane_p, plane_n, in_tri, out_tri1, out_tri2):
+
+        # make sure the plane is normal
+        plane_n = Vector3.normalize(plane_n)
+
+        # return shortest distance from point to normalized plane
+        def dist(p):
+            n = Vector3.normalize(p)
+            return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - Vector3.dot(plane_n, plane_p))
+
+        # classify points either in or outside of a plane
+        # distance is positive, point is on inside of plane
+        inside_points = []
+        inside_point_count = 0
+        outside_points = []
+        outside_point_count = 0
+
+        # calculate the distance of each point in triangle to plane
+        d0 = dist(in_tri[0])
+        d1 = dist(in_tri[1])
+        d2 = dist(in_tri[2])
+
+        if d0 >= 0:
+            inside_points.append(in_tri[0])
+            inside_point_count += 1
+        else:
+            outside_points.append(in_tri[0])
+            outside_point_count += 1
+        if d1 >= 0:
+            inside_points.append(in_tri[1])
+            inside_point_count += 1
+        else:
+            outside_points.append(in_tri[1])
+            outside_point_count += 1
+        if d2 >= 0:
+            inside_points.append(in_tri[2])
+            inside_point_count += 1
+        else:
+            outside_points.append(in_tri[2])
+            outside_point_count += 1
+
+        # classify points
+        if inside_point_count == 0:
+            # all points outside of plane, so clip entire triangle
+            return 0
+
+        # all points inside of plane, let triangle pass thru
+        if inside_point_count == 3:
+            out_tri1.shade = in_tri.shade
+            for i in range(3):
+                out_tri1[i].x = in_tri[i].x
+                out_tri1[i].y = in_tri[i].y
+                out_tri1[i].z = in_tri[i].z
+            return 1
+
+        # triangle should be clipped to smaller triangle, two pts outside
+        if inside_point_count == 1 and outside_point_count == 2:
+            # copy appearance to new triangle
+            #out_tri1.shade = in_tri.shade
+            out_tri1.shade = Color.blue
+
+            # inside pt is valid
+            out_tri1[0] = inside_points[0]
+
+            # two other points at the intersection of plane/triangle
+            out_tri1[1] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+            out_tri1[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[1])
+
+            return 1
+
+        # triangle should be clipped into quad, 1 pt outside
+        if inside_point_count == 2 and outside_point_count == 1:
+            # copy appearance to new triangles
+            #out_tri1.shade = in_tri.shade
+            #out_tri2.shade = in_tri.shade
+            out_tri1.shade = Color.green
+            out_tri2.shade = Color.red
+
+            # first triangle made of two inside pts and a new point at intersection
+            out_tri1[0] = inside_points[0]
+            out_tri1[1] = inside_points[1]
+            out_tri1[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+
+            # second triangle made of one inside pt, previously created pt, and at intersection
+            out_tri2[0] = inside_points[1]
+            out_tri2[1] = out_tri1[2]
+            out_tri2[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])
+
+            return 2
 
 class Mesh(object):
 
