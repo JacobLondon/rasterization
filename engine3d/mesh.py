@@ -1,75 +1,54 @@
 import os.path, numpy as np, copy
 from math import pi
 
+import numba
+
 from pyngine import Color
 
-class Vector3(object):
+#@numba.jit(nopython=True)
+def intersect_plane(plane_p, plane_n, line_start, line_end):
+    # detecting a vector intersecting a plane
+    plane_n = v_normalize(plane_n)
+    plane_d = -1 * v_dot(plane_n, plane_p)
+    ad = v_dot(line_start, plane_n)
+    bd = v_dot(line_end, plane_n)
+    t = (-1. * plane_d - ad) / (bd - ad)
+    line_start_to_end = v_sub(line_end, line_start)
+    line_to_intersect = v_mul(line_start_to_end, t)
+    return v_add(line_start, line_to_intersect)
 
-    def __init__(self, x=0, y=0, z=0, w=1):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.w = w
+def vec(x=0, y=0, z=0, w=1):
+    return np.array([x, y, z, w], dtype=float)
 
-    def __str__(self):
-        return '(' + str(int(self.x)) + ', ' + str(int(self.y)) + ', ' + str(int(self.z)) + ')'
+def v_add(v1, v2):
+    return vec(v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2])
 
-    def array3(self):
-        return np.array([self.x, self.y, self.z])
+def v_sub(v1, v2):
+    return vec(v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2])
 
-    def array4(self):
-        return np.array([self.x, self.y, self.z, self.w])
+def v_mul(v1, k):
+    return vec(v1[0] * k, v1[1] * k, v1[2] * k)
 
-    @staticmethod
-    def add(v1, v2):
-        return Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z)
+def v_div(v1, k):
+    return vec(v1[0] / k, v1[1] / k, v1[2] / k)
 
-    @staticmethod
-    def sub(v1, v2):
-        return Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z)
+def v_mag(v):
+    return np.sqrt(np.dot(v[:3], v[:3]))
 
-    @staticmethod
-    def mul(v1, k):
-        return Vector3(v1.x * k, v1.y * k, v1.z * k)
+def v_dot(v1, v2):
+    return np.dot(v1[0:3], v2[:3])
 
-    @staticmethod
-    def div(v1, k):
-        return Vector3(v1.x / k, v1.y / k, v1.z / k)
+def v_normalize(v):
+    l = v_mag(v)
+    return vec(v[0] / l, v[1] / l, v[2] / l)
 
-    @staticmethod
-    def mag(v):
-        return np.sqrt(np.dot(v.array3(), v.array3()))
+def v_cross(v1, v2):
+    coords = np.cross(v1[:3], v2[:3])
+    return vec(*coords[:3])
 
-    @staticmethod
-    def dot(v1, v2):
-        return np.dot(v1.array3(), v2.array3())
-
-    @staticmethod
-    def normalize(v):
-        l = Vector3.mag(v)
-        return Vector3(v.x / l, v.y / l, v.z / l)
-
-    @staticmethod
-    def cross(v1, v2):
-        coords = np.cross(v1.array3(), v2.array3())
-        return Vector3(*coords)
-
-    @staticmethod
-    def vmatmul(mat, vin):
-        coords = np.matmul(vin.array4(), mat)
-        return Vector3(*coords)
-
-    @staticmethod
-    def intersect_plane(plane_p, plane_n, line_start, line_end):
-        # detecting a vector intersecting a plane
-        plane_n = Vector3.normalize(plane_n)
-        plane_d = -1 * Vector3.dot(plane_n, plane_p)
-        ad = Vector3.dot(line_start, plane_n)
-        bd = Vector3.dot(line_end, plane_n)
-        t = (-1. * plane_d - ad) / (bd - ad)
-        line_start_to_end = Vector3.sub(line_end, line_start)
-        line_to_intersect = Vector3.mul(line_start_to_end, t)
-        return Vector3.add(line_start, line_to_intersect)
+def v_matmul(mat, vin):
+    coords = np.matmul(vin, mat)
+    return vec(*coords[:3])
 
 class Matrix(object):
 
@@ -79,7 +58,7 @@ class Matrix(object):
 
     @staticmethod
     def identity():
-        return np.identity(4)
+        return np.identity(4, dtype=float)
 
     @staticmethod
     def rotate_x(radians):
@@ -146,24 +125,24 @@ class Matrix(object):
     @staticmethod
     def point_at(pos, target, up):
         # calculate new forward direction
-        new_forward = Vector3.sub(target, pos)
-        new_forward = Vector3.normalize(new_forward)
+        new_forward = v_sub(target, pos)
+        new_forward = v_normalize(new_forward)
 
         # calculate new up direction
-        a = Vector3.mul(new_forward, Vector3.dot(up, new_forward))
-        new_up = Vector3.sub(up, a)
-        new_up = Vector3.normalize(new_up)
+        a = v_mul(new_forward, v_dot(up, new_forward))
+        new_up = v_sub(up, a)
+        new_up = v_normalize(new_up)
 
         # calculate new right direction
-        new_right = Vector3.cross(new_up, new_forward)
+        new_right = v_cross(new_up, new_forward)
 
         # construction dimensioning and translation matrix
         matrix = np.array([
-            [new_right.x, new_right.y, new_right.z, 0],
-            [new_up.x, new_up.y, new_up.z, 0],
-            [new_forward.x, new_forward.y, new_forward.z, 0],
-            [pos.x, pos.y, pos.z, 1]
-        ])
+            [new_right[0], new_right[1], new_right[2], 0],
+            [new_up[0], new_up[1], new_up[2], 0],
+            [new_forward[0], new_forward[1], new_forward[2], 0],
+            [pos[0], pos[1], pos[2], 1]
+        ], dtype=float)
         return matrix
 
     @staticmethod
@@ -178,16 +157,16 @@ class Matrix(object):
                 -1 * (m[3][0] * m[0][2] + m[3][1] * m[1][2] + m[3][2] * m[2][2]),
                 1
             ]
-        ])
+        ], dtype=float)
         return matrix
 
 class Triangle(object):
 
     def __init__(self, vectors=None):
         if vectors is None:
-            p0 = Vector3()
-            p1 = Vector3()
-            p2 = Vector3()
+            p0 = vec()
+            p1 = vec()
+            p2 = vec()
             self.p = [p0, p1, p2]
         else:
             self.p = [vectors[0], vectors[1], vectors[2]]
@@ -208,12 +187,12 @@ class Triangle(object):
     def clip_against_plane(plane_p, plane_n, in_tri, out_tri1, out_tri2):
 
         # make sure the plane is normal
-        plane_n = Vector3.normalize(plane_n)
+        plane_n = v_normalize(plane_n)
 
         # return shortest distance from point to normalized plane
         def dist(p):
-            n = Vector3.normalize(p)
-            return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - Vector3.dot(plane_n, plane_p))
+            n = v_normalize(p)
+            return (plane_n[0] * p[0] + plane_n[1] * p[1] + plane_n[2] * p[2] - v_dot(plane_n, plane_p))
 
         # classify points either in or outside of a plane
         # distance is positive, point is on inside of plane
@@ -255,9 +234,9 @@ class Triangle(object):
         if inside_point_count == 3:
             out_tri1.shade = in_tri.shade
             for i in range(3):
-                out_tri1[i].x = in_tri[i].x
-                out_tri1[i].y = in_tri[i].y
-                out_tri1[i].z = in_tri[i].z
+                out_tri1[i][0] = in_tri[i][0]
+                out_tri1[i][1] = in_tri[i][1]
+                out_tri1[i][2] = in_tri[i][2]
             return 1
 
         # triangle should be clipped to smaller triangle, two pts outside
@@ -270,8 +249,8 @@ class Triangle(object):
             out_tri1[0] = inside_points[0]
 
             # two other points at the intersection of plane/triangle
-            out_tri1[1] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
-            out_tri1[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[1])
+            out_tri1[1] = intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+            out_tri1[2] = intersect_plane(plane_p, plane_n, inside_points[0], outside_points[1])
 
             return 1
 
@@ -286,12 +265,12 @@ class Triangle(object):
             # first triangle made of two inside pts and a new point at intersection
             out_tri1[0] = inside_points[0]
             out_tri1[1] = inside_points[1]
-            out_tri1[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+            out_tri1[2] = intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
             
             # second triangle made of one inside pt, previously created pt, and at intersection
             out_tri2[0] = inside_points[1]
             out_tri2[1] = out_tri1[2]
-            out_tri2[2] = Vector3.intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])            
+            out_tri2[2] = intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])            
 
             return 2
 
@@ -317,10 +296,10 @@ class Mesh(object):
             # current line is a vertex
             if line[0] == 'v':
                 line = line.split()
-                v = Vector3()
-                v.x = float(line[1])
-                v.y = float(line[2])
-                v.z = float(line[3])
+                v = vec()
+                v[0] = float(line[1])
+                v[1] = float(line[2])
+                v[2] = float(line[3])
                 vertices.append(v)
 
             # current line is a face

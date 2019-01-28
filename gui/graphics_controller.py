@@ -1,7 +1,8 @@
 import pygame
+from threading import Thread
 
 from pyngine import Controller, Label, Grid, Anchor
-from engine3d import Graphics1, Graphics2, Graphics3
+from engine3d import Graphics1, Graphics2, Graphics3, Graphics4
 
 class GraphicsController(Controller):
 
@@ -28,7 +29,8 @@ class GraphicsController(Controller):
     def setup(self):
         #self.graphics = Graphics1(self.interface)
         #self.graphics = Graphics2(self.interface)
-        self.graphics = Graphics3(self)
+        #self.graphics = Graphics3(self)
+        self.graphics = Graphics4(self)
 
     def update_actions(self):
         self.fps_label.text = 'FPS ' + str(int(self.fps))
