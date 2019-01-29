@@ -1,7 +1,7 @@
 import os.path, numpy as np, copy
 from math import pi
 
-import numba
+#import numba
 
 from pyngine import Color
 
@@ -36,7 +36,7 @@ def v_mag(v):
     return np.sqrt(np.dot(v[:3], v[:3]))
 
 def v_dot(v1, v2):
-    return np.dot(v1[0:3], v2[:3])
+    return np.dot(v1[:3], v2[:3])
 
 def v_normalize(v):
     l = v_mag(v)
@@ -191,6 +191,7 @@ class Triangle(object):
 
         # return shortest distance from point to normalized plane
         def dist(p):
+            #TODO what does n do?
             n = v_normalize(p)
             return (plane_n[0] * p[0] + plane_n[1] * p[1] + plane_n[2] * p[2] - v_dot(plane_n, plane_p))
 

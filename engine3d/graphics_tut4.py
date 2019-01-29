@@ -19,19 +19,9 @@ class Updater(object):
         self.mesh_triangles = []
 
     def clear(self):
-        self.mesh_triangles = []
+        self.mesh_triangles.clear()
 
     def calculate(self):
-        
-        # set up camera looking vectors
-        up_vec = vec(0, -1, 0)
-        target_vec = vec(0, 0, 1)
-        rotcamera_matrix = Matrix.rotate_y(self.graphics.yaw)
-        self.graphics.look_dir = v_matmul(rotcamera_matrix, target_vec)
-        target_vec = v_add(self.graphics.camera, self.graphics.look_dir)
-
-        camera_matrix = Matrix.point_at(self.graphics.camera, target_vec, up_vec)
-        view_matrix = Matrix.quick_inverse(camera_matrix)
 
         rotz_matrix = Matrix.rotate_z(self.graphics.theta * 0.5)
         rotx_matrix = Matrix.rotate_x(self.graphics.theta)
@@ -43,6 +33,16 @@ class Updater(object):
         world_matrix = np.matmul(rotz_matrix, rotx_matrix)
         # transform by translation
         world_matrix = np.matmul(world_matrix, trans_matrix)
+        
+        # set up camera looking vectors
+        up_vec = vec(0, -1, 0)
+        target_vec = vec(0, 0, 1)
+        rotcamera_matrix = Matrix.rotate_y(self.graphics.yaw)
+        self.graphics.look_dir = v_matmul(rotcamera_matrix, target_vec)
+        target_vec = v_add(self.graphics.camera, self.graphics.look_dir)
+
+        camera_matrix = Matrix.point_at(self.graphics.camera, target_vec, up_vec)
+        view_matrix = Matrix.quick_inverse(camera_matrix)
 
         # draw all triangles onto screen
         for triangle in self.mesh_triangles:
@@ -170,7 +170,7 @@ class Graphics(object):
             self.yaw += self.controller.delta_x * self.controller.delta_time * 0.1
             self.yaw %= 2 * pi
 
-        self.triangles_to_raster = []
+        self.triangles_to_raster.clear()
         updater_threads = []
         for u in self.updaters:
             u.clear()
@@ -179,7 +179,7 @@ class Graphics(object):
         for t in range(len(self.mesh_obj.triangles)):
             self.updaters[t % self.num_updaters].mesh_triangles.append(self.mesh_obj.triangles[t])
         
-        start = time.time()
+        #start = time.time()
         # load threads into a list
         for u in self.updaters:
             updater_threads.append(Thread(target=u.calculate))
