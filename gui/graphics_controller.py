@@ -1,13 +1,13 @@
 import pygame
 from threading import Thread
 
-from pyngine import Controller, Label, Grid, Anchor
+from pyngine import Controller, Label, Grid, Anchor, Drawer
 from engine3d import Graphics1, Graphics2, Graphics3, Graphics4
 
 class GraphicsController(Controller):
 
     def __init__(self, interface):
-        Controller.__init__(self, interface)
+        Controller.__init__(self, interface, debug=False)
         self.set_mouse_visible(False)
         self.center_mouse = True
 
@@ -26,13 +26,18 @@ class GraphicsController(Controller):
         self.yaw_label.loc = self.layout.get_pixel(0, 2)
         self.yaw_label.background = None
 
+        #self.component_drawer.refresh = self.update_info
+        self.graphics = Graphics4(self)
+        self.component_drawer = Drawer(self, self.update_info, z=3000)
+        self.graphcis_drawer = Drawer(self, self.graphics.update)
+
     def setup(self):
         #self.graphics = Graphics1(self.interface)
         #self.graphics = Graphics2(self.interface)
         #self.graphics = Graphics3(self)
-        self.graphics = Graphics4(self)
+        pass
 
-    def update_actions(self):
+    def update_info(self):
         self.fps_label.text = 'FPS ' + str(int(self.fps))
         self.fps_label.load()
 
@@ -41,9 +46,6 @@ class GraphicsController(Controller):
 
         self.yaw_label.text = 'Yaw: ' + str(self.graphics.yaw)
         self.yaw_label.load()
-
-    def draw_midground(self):
-        self.graphics.update()
 
     # allow mouse control
     def return_keydown(self):

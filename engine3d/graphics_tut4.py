@@ -9,7 +9,7 @@ from collections import deque
 import copy, time, pygame
 from threading import Thread
 
-from pyngine import Color
+from pyngine import Color, Painter
 from .mesh import *
 
 class Updater(object):
@@ -134,6 +134,8 @@ class Graphics(object):
 
         self.mesh_obj.load_obj('assets/axis.obj')
 
+        self.painter = Painter(self)
+
         # projection matrix
         near = 0.1
         far = 1000.0
@@ -228,6 +230,6 @@ class Graphics(object):
             # draw transformed, viewed, clipped, projected, sorted triangles
             for t in triangles:
                 coords = [t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1]]
-                self.interface.fill_triangle(*coords, t.shade)
-                self.interface.draw_triangle(*coords, Color.black)
+                self.painter.fill_triangle(*coords, color=t.shade)
+                self.painter.draw_triangle(*coords, color=Color.black)
         
