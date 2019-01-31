@@ -35,13 +35,13 @@ class Updater(object):
         world_matrix = np.matmul(world_matrix, trans_matrix)
         
         # set up camera looking vectors
-        up_vec = vec(0, -1, 0)
+        #self.graphics.up_vec = vec(0, -1, 0)
         target_vec = vec(0, 0, 1)
         rotcamera_matrix = Matrix.rotate_y(self.graphics.yaw)
         self.graphics.look_dir = v_matmul(rotcamera_matrix, target_vec)
         target_vec = v_add(self.graphics.camera, self.graphics.look_dir)
 
-        camera_matrix = Matrix.point_at(self.graphics.camera, target_vec, up_vec)
+        camera_matrix = Matrix.point_at(self.graphics.camera, target_vec, self.graphics.up_vec)
         view_matrix = Matrix.quick_inverse(camera_matrix)
 
         # draw all triangles onto screen
@@ -126,6 +126,7 @@ class Graphics(object):
 
         self.camera = vec()
         self.look_dir = vec()
+        self.up_vec = vec(0, -1, 0)
         self.yaw = 0
         self.turning = True
 
@@ -144,21 +145,11 @@ class Graphics(object):
         self.proj_matrix = Matrix.projection(fov, aspect_ratio, near, far)
 
         self.triangles_to_raster = []
-        self.num_updaters = 5
+        self.num_updaters = 2
         self.updaters = [Updater(self) for _ in range(self.num_updaters)]
 
     def update(self):
 
-        # l/r/u/d movement
-        if self.controller.key_presses[pygame.K_SPACE]:
-            self.camera[1] += self.speed * self.controller.delta_time
-        if self.controller.key_presses[pygame.K_LSHIFT]:
-            self.camera[1] -= self.speed * self.controller.delta_time
-            
-        if self.controller.key_presses[pygame.K_a]:
-            self.camera[0] += self.speed * self.controller.delta_time
-        if self.controller.key_presses[pygame.K_d]:
-            self.camera[0] -= self.speed * self.controller.delta_time
 
         # f/b movement
         forward_vec = v_mul(self.look_dir, 8 * self.controller.delta_time)
@@ -167,10 +158,22 @@ class Graphics(object):
         if self.controller.key_presses[pygame.K_s]:
             self.camera = v_sub(self.camera, forward_vec)
 
+        # l/r/u/d movement
+        if self.controller.key_presses[pygame.K_SPACE]:
+            self.camera[1] += self.speed * self.controller.delta_time
+        if self.controller.key_presses[pygame.K_LSHIFT]:
+            self.camera[1] -= self.speed * self.controller.delta_time
+        
+        right_vec = v_cross(self.look_dir, self.up_vec)
+        right_vec = v_mul(right_vec, 8 * self.controller.delta_time)
+        if self.controller.key_presses[pygame.K_a]:
+            self.camera = v_add(self.camera, right_vec)
+        if self.controller.key_presses[pygame.K_d]:
+            self.camera = v_sub(self.camera, right_vec)
+
         # l/r mouse movement
-        if self.controller.delta_x > 2 and self.turning:
-            self.yaw += self.controller.delta_x * self.controller.delta_time * 0.1
-            self.yaw %= 2 * pi
+        if self.turning:
+            self.yaw = self.controller.yaw
 
         self.triangles_to_raster.clear()
         updater_threads = []

@@ -1,7 +1,7 @@
 from gui import Graphics
 from pyngine import Interface
 
-resolution = (600,600)
+resolution = (720,720)
 gwidth = gheight = 20
 refresh_rate = 60
 
