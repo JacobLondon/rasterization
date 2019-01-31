@@ -48,7 +48,7 @@ def v_cross(v1, v2):
 
 def v_matmul(mat, vin):
     coords = np.matmul(vin, mat)
-    return vec(*coords[:3])
+    return vec(*coords)
 
 class Matrix(object):
 

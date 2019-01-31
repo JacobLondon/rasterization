@@ -88,7 +88,7 @@ class Updater(object):
                 clipped_triangles = Triangle.clip_against_plane(vec(0, 0, .1), vec(0, 0, 1), tri_viewed, clipped[0], clipped[1])
                 
                 for n in range(clipped_triangles):
-                    
+
                     # project triangles from 3D to 2D
                     tri_projected[0] = v_matmul(self.graphics.proj_matrix, clipped[n][0])
                     tri_projected[1] = v_matmul(self.graphics.proj_matrix, clipped[n][1])
@@ -98,7 +98,7 @@ class Updater(object):
                     tri_projected[0] = v_div(tri_projected[0], tri_projected[0][3])
                     tri_projected[1] = v_div(tri_projected[1], tri_projected[1][3])
                     tri_projected[2] = v_div(tri_projected[2], tri_projected[2][3])
-
+					
                     # offset vertices into visible normalized space
                     offset_view = vec(1, 1, 0)
                     tri_projected[0] = v_add(tri_projected[0], offset_view)
@@ -142,7 +142,7 @@ class Graphics(object):
         self.proj_matrix = Matrix.projection(fov, aspect_ratio, near, far)
 
         self.triangles_to_raster = []
-        self.num_updaters = 1
+        self.num_updaters = 5
         self.updaters = [Updater(self) for _ in range(self.num_updaters)]
 
     def update(self):
