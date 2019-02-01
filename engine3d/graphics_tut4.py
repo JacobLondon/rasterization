@@ -35,7 +35,6 @@ class Updater(object):
         world_matrix = np.matmul(world_matrix, trans_matrix)
         
         # set up camera looking vectors
-        #self.graphics.up_vec = vec(0, -1, 0)
         target_vec = vec(0, 0, 1)
         rotcamera_matrix = Matrix.rotate_y(self.graphics.yaw)
         self.graphics.look_dir = v_matmul(rotcamera_matrix, target_vec)

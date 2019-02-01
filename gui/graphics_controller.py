@@ -9,7 +9,7 @@ class GraphicsController(Controller):
     def __init__(self, interface):
         Controller.__init__(self, interface, debug=False)
         self.set_mouse_visible(False)
-        self.center_mouse = True
+        self.mouse_locked = True
 
     def initialize_components(self):
         self.layout = Grid(self.background_panel, 30, 30)
@@ -49,7 +49,7 @@ class GraphicsController(Controller):
 
     # allow mouse control
     def return_keydown(self):
-        self.center_mouse = not self.center_mouse
+        self.mouse_locked = not self.mouse_locked
         self.set_mouse_visible(not self.mouse_visible)
         self.key_presses[pygame.K_RETURN] = False
         self.graphics.turning = not self.graphics.turning
