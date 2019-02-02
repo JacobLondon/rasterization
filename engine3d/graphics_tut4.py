@@ -9,6 +9,8 @@ from collections import deque
 import copy, time, pygame
 from threading import Thread
 
+from numba import jit
+
 from pyngine import Color, Painter
 from .mesh import *
 
@@ -21,14 +23,13 @@ class Updater(object):
     def clear(self):
         self.mesh_triangles.clear()
 
+    @jit
     def calculate(self):
 
-        rotz_matrix = Matrix.rotate_z(self.graphics.theta * 0.5)
-        rotx_matrix = Matrix.rotate_x(self.graphics.theta)
-
-        trans_matrix = Matrix.translation(0, 0, 5)
+        rotz_matrix = m_rotate_z(0)
+        rotx_matrix = m_rotate_x(0)
+        trans_matrix = m_translation(0, 0, 5)
         
-        world_matrix = Matrix.identity()
         # transform by rotation
         world_matrix = np.matmul(rotz_matrix, rotx_matrix)
         # transform by translation
@@ -36,12 +37,12 @@ class Updater(object):
         
         # set up camera looking vectors
         target_vec = vec(0, 0, 1)
-        rotcamera_matrix = Matrix.rotate_y(self.graphics.yaw)
+        rotcamera_matrix = m_rotate_y(self.graphics.yaw)
         self.graphics.look_dir = v_matmul(rotcamera_matrix, target_vec)
         target_vec = v_add(self.graphics.camera, self.graphics.look_dir)
 
-        camera_matrix = Matrix.point_at(self.graphics.camera, target_vec, self.graphics.up_vec)
-        view_matrix = Matrix.quick_inverse(camera_matrix)
+        camera_matrix = m_point_at(self.graphics.camera, target_vec, self.graphics.up_vec)
+        view_matrix = m_quick_inverse(camera_matrix)
 
         # draw all triangles onto screen
         for triangle in self.mesh_triangles:
@@ -84,7 +85,7 @@ class Updater(object):
                 
                 clipped_triangles = 0
                 clipped = [Triangle(), Triangle()]
-                clipped_triangles = Triangle.clip_against_plane(vec(0, 0, .1), vec(0, 0, 1), tri_viewed, clipped[0], clipped[1])
+                clipped_triangles = t_clip_against_plane(vec(0, 0, .1), vec(0, 0, 1), tri_viewed, clipped[0], clipped[1])
                 
                 for n in range(clipped_triangles):
 
@@ -130,7 +131,7 @@ class Graphics(object):
         self.turning = True
 
         self.mesh_obj = Mesh()
-        self.theta = 0
+        #self.theta = 0
 
         self.mesh_obj.load_obj('assets/axis.obj')
 
@@ -141,14 +142,52 @@ class Graphics(object):
         far = 1000.0
         fov = 90
         aspect_ratio = self.interface.resolution[0] / self.interface.resolution[1]
-        self.proj_matrix = Matrix.projection(fov, aspect_ratio, near, far)
+        self.proj_matrix = m_projection(fov, aspect_ratio, near, far)
 
         self.triangles_to_raster = []
-        self.num_updaters = 2
+        self.num_updaters = 1
         self.updaters = [Updater(self) for _ in range(self.num_updaters)]
 
-    def update(self):
+    def raster(self):
+        for tri_to_raster in self.triangles_to_raster:
+            # clip triangles against screen edges
+            clipped = [Triangle(), Triangle()]
+            triangles = deque([])
+            # add initial triangle
+            triangles.append(tri_to_raster)
+            new_triangles = 1
 
+            for p in range(4):
+                tris_to_add = 0
+                while new_triangles > 0:
+                    test = triangles.popleft()
+                    new_triangles -= 1
+
+                    # top screen clip
+                    if p == 0:
+                        tris_to_add = t_clip_against_plane(vec(0, 0, 0), vec(0, 1, 0), test, clipped[0], clipped[1])
+                    # bottom screen clip
+                    elif p == 1:
+                        tris_to_add = t_clip_against_plane(vec(0, self.interface.resolution[1] - 1, 0), vec(0, -1, 0), test, clipped[0], clipped[1])
+                    # left screen clip
+                    elif p == 2:
+                        tris_to_add = t_clip_against_plane(vec(0, 0, 0), vec(1, 0, 0), test, clipped[0], clipped[1])
+                    # right screen clip
+                    elif p == 3:
+                        tris_to_add = t_clip_against_plane(vec(self.interface.resolution[0] - 1, 0, 0), vec(-1, 0, 0), test, clipped[0], clipped[1])
+                    
+                    # add the new triangles to the back of the queue
+                    for w in range(tris_to_add):
+                        triangles.append(copy.deepcopy(clipped[w]))
+                new_triangles = len(triangles)
+
+            # draw transformed, viewed, clipped, projected, sorted triangles
+            for t in triangles:
+                coords = [t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1]]
+                self.painter.fill_triangle(*coords, color=t.shade)
+                self.painter.draw_triangle(*coords, color=Color.black)
+
+    def update(self):
 
         # f/b movement
         forward_vec = v_mul(self.look_dir, 8 * self.controller.delta_time)
@@ -196,42 +235,6 @@ class Graphics(object):
         #print('calc time:', time.time() - start)
         # sort triangles from back to front (sort by avg of z values of tri)
         self.triangles_to_raster.sort(key=lambda t: (t[0][2] + t[1][2] + t[2][2]) / 3.0, reverse=True)
-        
-        for tri_to_raster in self.triangles_to_raster:
-            # clip triangles against screen edges
-            clipped = [Triangle(), Triangle()]
-            triangles = deque([])
-            # add initial triangle
-            triangles.append(tri_to_raster)
-            new_triangles = 1
+        self.raster()
 
-            for p in range(4):
-                tris_to_add = 0
-                while new_triangles > 0:
-                    test = triangles.popleft()
-                    new_triangles -= 1
-
-                    # top screen clip
-                    if p == 0:
-                        tris_to_add = Triangle.clip_against_plane(vec(0, 0, 0), vec(0, 1, 0), test, clipped[0], clipped[1])
-                    # bottom screen clip
-                    elif p == 1:
-                        tris_to_add = Triangle.clip_against_plane(vec(0, self.interface.resolution[1] - 1, 0), vec(0, -1, 0), test, clipped[0], clipped[1])
-                    # left screen clip
-                    elif p == 2:
-                        tris_to_add = Triangle.clip_against_plane(vec(0, 0, 0), vec(1, 0, 0), test, clipped[0], clipped[1])
-                    # right screen clip
-                    elif p == 3:
-                        tris_to_add = Triangle.clip_against_plane(vec(self.interface.resolution[0] - 1, 0, 0), vec(-1, 0, 0), test, clipped[0], clipped[1])
-                    
-                    # add the new triangles to the back of the queue
-                    for w in range(tris_to_add):
-                        triangles.append(copy.deepcopy(clipped[w]))
-                new_triangles = len(triangles)
-
-            # draw transformed, viewed, clipped, projected, sorted triangles
-            for t in triangles:
-                coords = [t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1]]
-                self.painter.fill_triangle(*coords, color=t.shade)
-                self.painter.draw_triangle(*coords, color=Color.black)
         

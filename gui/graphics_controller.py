@@ -38,7 +38,7 @@ class GraphicsController(Controller):
         pass
 
     def update_info(self):
-        self.fps_label.text = 'FPS ' + str(int(self.fps))
+        self.fps_label.text = 'FPS ' + str(round(self.fps))
         self.fps_label.load()
 
         self.pos_label.text = 'Position: ' + str(self.graphics.camera)
