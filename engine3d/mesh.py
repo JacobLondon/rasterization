@@ -222,7 +222,7 @@ def t_clip_against_plane(plane_p, plane_n, in_tri, out_tri1, out_tri2):
     if inside_point_count == 1 and outside_point_count == 2:
         # copy appearance to new triangle
         out_tri1.shade = in_tri.shade
-        #out_tri1.shade = Color.blue
+        #out_tri1.shade = Color['blue']
 
         # inside pt is valid
         out_tri1[0] = inside_points[0]
@@ -238,8 +238,8 @@ def t_clip_against_plane(plane_p, plane_n, in_tri, out_tri1, out_tri2):
         # copy appearance to new triangles
         out_tri1.shade = in_tri.shade
         out_tri2.shade = in_tri.shade
-        #out_tri1.shade = Color.green
-        #out_tri2.shade = Color.red
+        #out_tri1.shade = Color['green']
+        #out_tri2.shade = Color['red']
 
         # first triangle made of two inside pts and a new point at intersection
         out_tri1[0] = inside_points[0]
@@ -264,7 +264,7 @@ class Triangle(object):
         else:
             self.p = [vectors[0], vectors[1], vectors[2]]
 
-        self.shade = Color.white
+        self.shade = Color['white']
 
     def __str__(self):
         return str(self.p[0]) + str(self.p[1]) + str(self.p[2])

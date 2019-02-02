@@ -185,33 +185,33 @@ class Graphics(object):
             for t in triangles:
                 coords = [t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1]]
                 self.painter.fill_triangle(*coords, color=t.shade)
-                self.painter.draw_triangle(*coords, color=Color.black)
+                self.painter.draw_triangle(*coords, color=Color['black'])
 
     def update(self):
 
         # f/b movement
         forward_vec = v_mul(self.look_dir, 8 * self.controller.delta_time)
-        if self.controller.key_presses[pygame.K_w]:
+        if self.controller.keyboard.presses[pygame.K_w]:
             self.camera = v_add(self.camera, forward_vec)
-        if self.controller.key_presses[pygame.K_s]:
+        if self.controller.keyboard.presses[pygame.K_s]:
             self.camera = v_sub(self.camera, forward_vec)
 
         # l/r/u/d movement
-        if self.controller.key_presses[pygame.K_SPACE]:
+        if self.controller.keyboard.presses[pygame.K_SPACE]:
             self.camera[1] += self.speed * self.controller.delta_time
-        if self.controller.key_presses[pygame.K_LSHIFT]:
+        if self.controller.keyboard.presses[pygame.K_LSHIFT]:
             self.camera[1] -= self.speed * self.controller.delta_time
         
         right_vec = v_cross(self.look_dir, self.up_vec)
         right_vec = v_mul(right_vec, 8 * self.controller.delta_time)
-        if self.controller.key_presses[pygame.K_a]:
+        if self.controller.keyboard.presses[pygame.K_a]:
             self.camera = v_add(self.camera, right_vec)
-        if self.controller.key_presses[pygame.K_d]:
+        if self.controller.keyboard.presses[pygame.K_d]:
             self.camera = v_sub(self.camera, right_vec)
 
         # l/r mouse movement
         if self.turning:
-            self.yaw = self.controller.yaw
+            self.yaw = self.controller.mouse.yaw
 
         self.triangles_to_raster.clear()
         updater_threads = []
