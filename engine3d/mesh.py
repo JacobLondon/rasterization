@@ -1,11 +1,11 @@
 import os.path, numpy as np, copy
 from math import pi
 
-from numba import vectorize, cuda, jit
+#from numba import vectorize, cuda, jit
 
 from pyngine import Color
 
-@jit
+#@jit
 def intersect_plane(plane_p, plane_n, line_start, line_end):
     # detecting a vector intersecting a plane
     plane_n = v_normalize(plane_n)
@@ -20,31 +20,31 @@ def intersect_plane(plane_p, plane_n, line_start, line_end):
 def vec(x=0, y=0, z=0, w=1):
     return np.array([x, y, z, w], dtype=float)
 
-@jit
+#@jit
 def v_add(v1, v2):
     return v1 + v2
 
-@jit
+#@jit
 def v_sub(v1, v2):
     return v1 - v2
 
-@jit
+#@jit
 def v_mul(v1, k):
     return v1 * k
 
-@jit
+#@jit
 def v_div(v1, k):
     return v1 / k
 
-@jit
+#@jit
 def v_mag(v):
     return np.sqrt(np.dot(v[:3], v[:3]))
 
-@jit
+#@jit
 def v_dot(v1, v2):
     return np.dot(v1[:3], v2[:3])
 
-@jit
+#@jit
 def v_normalize(v):
     return v / v_mag(v)
 
@@ -52,7 +52,7 @@ def v_cross(v1, v2):
     coords = np.cross(v1[:3], v2[:3])
     return vec(*coords[:3])
 
-@jit
+#@jit
 def v_matmul(mat, vin):
     return np.matmul(vin, mat)
 
@@ -123,7 +123,7 @@ pos: vector where the object should be
 target: forward vector for that object
 up: up vector
 '''
-@jit
+#@jit
 def m_point_at(pos, target, up):
     # calculate new forward direction
     new_forward = v_sub(target, pos)
@@ -146,7 +146,7 @@ def m_point_at(pos, target, up):
     ], dtype=float)
     return matrix
 
-@jit
+#@jit
 def m_quick_inverse(m):
     matrix = np.array([
         [m[0][0], m[1][0], m[2][0], 0],
@@ -162,7 +162,7 @@ def m_quick_inverse(m):
     return matrix
 
 # return shortest distance from point to normalized plane
-@jit
+#@jit
 def dist(p, plane_n, plane_p):
     return (plane_n[0] * p[0] + plane_n[1] * p[1] + plane_n[2] * p[2] - v_dot(plane_n, plane_p))
 

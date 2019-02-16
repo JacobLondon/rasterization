@@ -2,7 +2,7 @@ import pygame
 from threading import Thread
 
 from pyngine import Controller, Label, Grid, Anchor, Drawer
-from engine3d import Graphics1, Graphics2, Graphics3, Graphics4
+from engine3d import Graphics
 
 class GraphicsController(Controller):
 
@@ -29,16 +29,9 @@ class GraphicsController(Controller):
         self.yaw_label.loc = self.layout.get_pixel(0, 2)
         self.yaw_label.background = None
 
-        #self.component_drawer.refresh = self.update_info
-        self.graphics = Graphics4(self)
+        self.graphics = Graphics(self)
         self.component_drawer = Drawer(self, self.update_info)
         self.graphcis_drawer = Drawer(self, self.graphics.update)
-
-    def setup(self):
-        #self.graphics = Graphics1(self.interface)
-        #self.graphics = Graphics2(self.interface)
-        #self.graphics = Graphics3(self)
-        pass
 
     def update_info(self):
         self.fps_label.text = 'FPS ' + str(round(self.fps))

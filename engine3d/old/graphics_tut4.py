@@ -9,7 +9,7 @@ from collections import deque
 import copy, time, pygame
 from threading import Thread
 
-from numba import jit
+#from numba import jit
 
 from pyngine import Color, Painter
 from .mesh import *
@@ -23,7 +23,7 @@ class Updater(object):
     def clear(self):
         self.mesh_triangles.clear()
 
-    @jit
+    #@jit
     def calculate(self):
 
         rotz_matrix = m_rotate_z(0)
