@@ -1,7 +1,7 @@
 import pygame
 from threading import Thread
 
-from pyngine import Controller, Label, Grid, Drawer
+from pyngine import Controller, Label, Grid, Drawer, Event
 from engine3d import Graphics
 
 class GraphicsController(Controller):
@@ -11,8 +11,8 @@ class GraphicsController(Controller):
         self.mouse.set_visible(False)
         self.mouse.locked = True
 
-        self.keyboard.return_keydown = self.toggle_mouse
-        self.keyboard.escape_keydown = self.stop_program
+        Event(self, action=self.stop_program, keys=(pygame.K_ESCAPE,))
+        Event(self, action=self.toggle_mouse, keys=(pygame.K_RETURN,))
 
     def initialize_components(self):
         self.layout = Grid(self.background_panel, 30, 30)
