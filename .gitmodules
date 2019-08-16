@@ -1,0 +1,3 @@
+[submodule "pyngine"]
+	path = pyngine
+	url = https://github.com/JacobLondon/pyngine

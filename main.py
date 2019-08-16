@@ -1,6 +1,6 @@
 import cProfile
 
-from gui import Graphics
+from src import GraphicsController
 from pyngine import Interface
 
 resolution = (720,720)
@@ -10,7 +10,7 @@ refresh_rate = 200
 def main():
     interface_args = ['3D Engine', resolution, gwidth, gheight, refresh_rate]
     interface = Interface(*interface_args)
-    controller = Graphics(interface)
+    controller = GraphicsController(interface)
 
     '''pr = cProfile.Profile()
     pr.enable()'''

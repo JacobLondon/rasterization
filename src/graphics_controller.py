@@ -2,7 +2,7 @@ import pygame
 from threading import Thread
 
 from pyngine import Controller, Label, Grid, Drawer, Event
-from engine3d import Graphics
+from .graphics import Graphics
 
 class GraphicsController(Controller):
 
@@ -14,7 +14,6 @@ class GraphicsController(Controller):
         Event(self, action=self.stop_program, keys=(pygame.K_ESCAPE,))
         Event(self, action=self.toggle_mouse, keys=(pygame.K_RETURN,))
 
-    def initialize_components(self):
         self.layout = Grid(self.background_panel, 30, 30)
         self.fps_label = Label(self, str(self.fps), z=3000)
         self.fps_label.loc = self.layout.get_pixel(0, 0)
@@ -49,4 +48,3 @@ class GraphicsController(Controller):
         self.mouse.toggle_visibility()
         self.keyboard.presses[pygame.K_RETURN] = False
         self.graphics.turning = not self.graphics.turning
-
